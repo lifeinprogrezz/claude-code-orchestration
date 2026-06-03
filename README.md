@@ -1,3 +1,5 @@
+> **Note — why this repo exists:** Public, curated copy of my personal Claude Code orchestration setup, published as a portfolio showcase. Personal notes, session logs, and job-search tooling are excluded (kept in a separate private repo).
+
 # Claude orchestration — my two-plane Claude Code ecosystem
 
 This repo is the **canonical, version-controlled home of my Claude Code setup** — not a
