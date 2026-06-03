@@ -1,0 +1,14 @@
+.DS_Store
+*.log
+node_modules/
+.env
+.env.local
+dist/
+build/
+
+# local secrets / runtime
+.claude-code-router/
+*.local.json
+
+# LibreOffice lock files (transient)
+.~lock.*#
