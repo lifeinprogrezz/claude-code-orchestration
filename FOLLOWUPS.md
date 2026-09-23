@@ -12,5 +12,8 @@ it back by hand.
   `CLAUDE.local.md` short.
 - `ultracode-sweep` is not in the kit: it is bound to the GitHub CLI.
 
+## Verified
+- 2026-09-23 — `@~/.claude/CLAUDE.local.md` import at user level loads (probe passphrase test, claude -p).
+
 ## Log
 <!-- - YYYY-MM-DD — <lesson, one line> -->
