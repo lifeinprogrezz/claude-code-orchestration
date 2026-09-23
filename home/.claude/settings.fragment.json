@@ -1,10 +1,6 @@
 {
   "permissions": {
-    "allow": [
-      "Bash(git add *)", "Bash(git commit*)", "Bash(git push*)",
-      "Bash(git switch *)", "Bash(git checkout *)",
-      "Bash(gh repo create *)", "Bash(gh repo view *)"
-    ],
+    "allow": ["Bash(git add *)", "Bash(git commit*)"],
     "deny": ["Read(./.env)", "Read(./.env.*)"]
   },
   "hooks": {
@@ -13,6 +9,18 @@
         { "type": "command", "if": "Bash(git commit*)", "command": "$HOME/.claude/hooks/secrets-scan.sh" },
         { "type": "command", "if": "Bash(git push*)",   "command": "$HOME/.claude/hooks/secrets-scan.sh" }
       ]}
+    ],
+    "PostToolUse": [
+      { "matcher": "Edit|Write|MultiEdit", "hooks": [
+        { "type": "command", "command": "$HOME/.claude/hooks/claude-md-size.sh" }
+      ]}
     ]
+  },
+  "enabledPlugins": {
+    "superpowers@claude-plugins-official": true,
+    "context7@claude-plugins-official": true,
+    "claude-md-management@claude-plugins-official": true,
+    "playwright@claude-plugins-official": true,
+    "frontend-design@claude-plugins-official": true
   }
 }

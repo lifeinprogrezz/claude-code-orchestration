@@ -1,87 +1,59 @@
-> **Note — why this repo exists:** Public, curated copy of my personal Claude Code orchestration setup, published as a portfolio showcase. Personal notes, session logs, and job-search tooling are excluded (kept in a separate private repo).
+> **Generated.** This repo is the output of `tools/export-work-kit.sh` in a private
+> orchestration repo. Do not edit files here; a re-export overwrites them. Improvements go to
+> `FOLLOWUPS.md` and travel back by hand. It is also a public showcase of how I run Claude Code.
 
-# Claude orchestration — my two-plane Claude Code ecosystem
+# Claude Code work kit — the portable method
 
-This repo is the **canonical, version-controlled home of my Claude Code setup** — not a
-product. It does two things:
+One clone plus `./install.sh` puts my working method on any Linux or WSL machine:
+always-loaded doctrine, two enforcement hooks, two writing/research skills, and two ledger
+templates. It contains no personal data, no credentials and nothing about any employer. A gate in
+the exporter fails the build otherwise.
 
-1. **Dotfiles foundation** (`home/.claude/` + `install.sh`): my global `CLAUDE.md`, the
-   secrets-scan enforcement hook, and the managed settings, installed by symlink/merge
-   onto any machine (laptop **and** VPS) so they behave identically.
-2. **Remote ops kit** (`bootstrap.sh`, `ccr-*`, `cc-autopilot.sh`, `harden-vps.sh`): turns a
-   small VPS into an always-on, phone-controlled Claude Code agent with cost-aware model
-   routing and an autonomous lane that can't leak secrets.
-
-## Layout
-```
-home/.claude/                 # canonical ~/.claude config — install.sh wires it in
-├── CLAUDE.md                 #   global instructions + coding-behavior layer   → symlinked
-├── hooks/secrets-scan.sh     #   PreToolUse secrets gate (fail-closed)          → symlinked
-└── settings.fragment.json    #   managed keys (hooks + git/gh perms)            → jq-merged
-install.sh                    # idempotent: backup + symlink + merge (CLAUDE_HOME overridable)
-tests/                        # test-secrets-scan.sh (10 cases), test-install.sh
-.secrets-scan-allow           # per-repo allowlist of paths the hook skips
-bootstrap.sh                  # VPS: Node+claude+ccr, runs install.sh, wires the service
-harden-vps.sh                 # VPS: ufw + fail2ban + (guarded) key-only SSH
-ccr-config.json / ccr.service # claude-code-router config + systemd user unit
-cc-autopilot.sh               # headless `claude -p` wrapper; pushes only if the hook passes
-docs/superpowers/             # design spec + implementation plan + the VPS runbook
-```
-
-## Install the foundation (any machine)
+## Install (Linux / WSL; needs `git` and `python3`; `jq` optional)
 ```bash
-git clone https://github.com/lifeinprogrezz/claude-orchestration.git ~/orchestration
+git clone https://github.com/lifeinprogrezz/claude-code-orchestration.git ~/orchestration
 cd ~/orchestration
-./install.sh        # symlinks ~/.claude/{CLAUDE.md,hooks/secrets-scan.sh}, merges settings.json
-                    # (backs up anything it replaces to ~/.claude/backups/<ts>/; needs jq)
+./install.sh
 ```
-It preserves everything already in your `settings.json` and never touches `settings.local.json`.
-On the VPS, `bootstrap.sh` runs `install.sh` for you.
+`install.sh` is idempotent. It:
+- symlinks `~/.claude/CLAUDE.md`, `~/.claude/hooks/*.sh` and `~/.claude/skills/<name>` into this clone;
+- **preserves a pre-existing `~/.claude/CLAUDE.md`** as `~/.claude/CLAUDE.local.md` (the kit's
+  CLAUDE.md imports it at the end, so your own profile keeps loading);
+- merges `home/.claude/settings.fragment.json` into `~/.claude/settings.json` (hooks, two git
+  permissions, five plugins) with `jq` or, if missing, `python3`. Everything else in your settings
+  is preserved; `settings.local.json` is never touched;
+- asserts every wired hook and managed skill is deployed.
 
-## The one thing to understand: two planes
-Claude Code authenticates on one of two planes, and they don't mix.
+Update: `cd ~/orchestration && git pull && ./install.sh`.
 
-| Plane | Enter it by | Uses | Failover |
-|------|-------------|------|----------|
-| **Subscription** | `claude` (OAuth) | Max quota (rolling windows) | none — blocked when the window closes |
-| **Router / API** | `ccr code`, or `ANTHROPIC_BASE_URL`/`ANTHROPIC_API_KEY` | metered API credits via OpenRouter | yes — multi-provider, cheap-model background routing |
+## What it installs
+| Piece | What it does |
+|---|---|
+| `home/.claude/CLAUDE.md` | Doctrine: coding behavior, session ritual, 9 operating pillars, STE writing rules, work profile |
+| `hooks/secrets-scan.sh` | PreToolUse gate on `git commit`/`git push`. Blocks credential-looking diffs. Fails closed |
+| `hooks/claude-md-size.sh` | PostToolUse warning when a CLAUDE.md or MEMORY.md crosses its auto-load budget |
+| `skills/ste-writing` | ASD-STE100 anti-slop writing skill + `ste-lint.py` |
+| `skills/reverse-engineering-competitors` | First-hand product teardown method |
+| `templates/ledgers/` | `decisions.md` (append-only) and `discrepancies.md` (corrections are law) for any project brain |
+| `tools/redact-secrets.py` | Scrub secret-shaped values from generated text before it enters git |
+| `BOOTSTRAP.md` | The steps a Claude Code session runs to adopt the kit in a project |
 
-You run **two modes** and flip with one command: `claude` (daily driver, best value) vs
-`ccr code "..."` (overflow/autopilot, cost-routed). Keys only ever live on a machine you
-control (the VPS) — never in this repo, never on the managed cloud.
+## What it deliberately does not contain
+Identity, accounts, project pointers, remote-ops tooling, router config, personal skills,
+session logs, research notes. See the exporter's allowlist in the private repo.
 
-## VPS setup
-Full step-by-step (provision → harden → bootstrap → keys → remote control → cron) is in
-**`docs/superpowers/plans/2026-05-30-phase2-vps-runbook.md`**. Short version:
+## Verify
 ```bash
-# on the VPS, after adding your SSH key:
-git clone … ~/orchestration && cd ~/orchestration
-./harden-vps.sh && ./harden-vps.sh --ssh    # then Tailscale
-./bootstrap.sh                              # installs everything + runs install.sh
-nano ~/.claude-code-router/config.json      # add the real OpenRouter key; restart ccr
-```
-
-## Remote control (phone)
-```bash
-tmux new -s cc            # mosh first if you roam between networks
-claude --remote-control   # scan the QR once;  detach: Ctrl-b d ;  reattach: tmux attach -t cc
-```
-
-## Autopilot (cron)
-`cc-autopilot` runs a task headless, then pushes **only if the canonical secrets-scan hook
-passes** (same hook as interactive Claude Code; honours each repo's `.secrets-scan-allow`).
-```cron
-30 7 * * 1-5  USE_ROUTER=1 /home/you/.local/bin/cc-autopilot /home/you/career-ops "run morning; commit the digest"
-```
-
-## Secrets gate
-`home/.claude/hooks/secrets-scan.sh` blocks any `git commit`/`git push` whose diff looks like
-credentials (`.env` files, `key/secret/token/password = …`, Stripe/GitHub/Slack/AWS/PEM
-prefixes). **Fails closed** on internal error. False positive on a legit fixture/doc? Add its
-path to that repo's `.secrets-scan-allow`. Never put a real key in a tracked file.
-
-## Health checks
-```bash
-ccr status   •   systemctl --user status ccr   •   claude doctor
 bash tests/test-secrets-scan.sh home/.claude/hooks/secrets-scan.sh   # PASS=10
+bash tests/test-install.sh
+bash tests/test-redact-secrets.sh
 ```
+Then, in any git repo: stage a scratch file holding a fake live-mode Stripe-style key (see `BOOTSTRAP.md`
+step 5), ask Claude Code to commit, expect BLOCKED, delete the file.
+
+If your organization pushes managed settings (`/etc/claude-code/managed-settings.json`), those
+win over `settings.json`. Confirm the hooks still fire after install.
+
+## Boundary rule
+Nothing employer-specific goes into this kit. Nothing personal goes into an employer workspace.
+Employer context lives in the employer project; the kit is method only.

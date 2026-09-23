@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "description": "Declarative toolchain for the work kit. install.sh deploys + asserts hooks and global skills; plugin CODE installs from the marketplace (one-time: `claude plugin marketplace add anthropics/claude-plugins-official`, then `claude plugin install <name>@claude-plugins-official`).",
+  "marketplace": { "claude-plugins-official": { "source": "github", "repo": "anthropics/claude-plugins-official" } },
+  "plugins": { "enabled": ["superpowers", "context7", "claude-md-management", "playwright", "frontend-design"] },
+  "hooks": { "deployed": ["secrets-scan.sh", "claude-md-size.sh"] },
+  "rails": { "deployed": [] },
+  "globalSkills": { "managed": ["ste-writing", "reverse-engineering-competitors"] },
+  "externalSkills": { "skills": {} }
+}

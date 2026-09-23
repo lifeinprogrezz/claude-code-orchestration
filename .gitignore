@@ -12,3 +12,4 @@ build/
 
 # LibreOffice lock files (transient)
 .~lock.*#
+__pycache__/
